@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Vittov — Detalle del producto</title>
+    <link rel="stylesheet" href="../../../style.css" />
+  </head>
+  <body>
+    <nav class="navbar">
+      <a href="../home/home.html"><strong>Vittov</strong></a>
+      <div class="nav-right">
+        <a href="../cart/cart.html" class="cart-link"><span class="cart-icon">🛒</span><span id="cartCount" class="badge badge-secondary">0</span></a>
+        <span id="userName" class="muted"></span>
+        <button id="logoutBtn" class="btn outline">Salir</button>
+      </div>
+    </nav>
+    <main class="container">
+      <div id="errorBox" class="error" style="display:none"></div>
+      <div id="loading" class="spinner" style="display:none"></div>
+      <article class="grid grid-cols-2" id="productView"></article>
+      <div class="space"></div>
+      <a class="btn outline" href="../home/home.html">Volver</a>
+    </main>
+    <script type="module" src="./productDetail.ts"></script>
+  </body>
+</html>
+
+

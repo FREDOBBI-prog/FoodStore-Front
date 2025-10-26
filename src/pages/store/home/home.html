@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Food Store — Catálogo</title>
+    <link rel="stylesheet" href="../../../style.css" />
+  </head>
+  <body>
+    <nav class="navbar">
+      <a href="./home.html"><strong>Vittov</strong></a>
+      <div class="nav-right">
+        <a href="../cart/cart.html" class="cart-link"><span class="cart-icon">🛒</span><span id="cartCount" class="badge badge-secondary">0</span></a>
+        <span id="userName" class="muted"></span>
+        <button id="logoutBtn" class="btn outline">Salir</button>
+      </div>
+    </nav>
+    <main class="container">
+      <section style="width:100%;">
+        <div id="errorBox" class="error" style="display:none"></div>
+        <div id="loading" class="spinner" aria-label="Cargando" style="display:none"></div>
+        <div id="homeLoading" class="loader hidden"></div>
+        <div id="homeError" class="alert error hidden">Error cargando productos. Intentá nuevamente.</div>
+        <div id="homeEmpty" class="empty hidden">No hay productos para mostrar.</div>
+        <p id="resultCount" class="muted">0 productos disponibles</p>
+        <div id="productsGrid"></div>
+      </section>
+    </main>
+    <script type="module" src="./home.ts"></script>
+  </body>
+  </html>
+
+

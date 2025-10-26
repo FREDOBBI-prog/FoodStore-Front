@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Food Store — Panel Admin</title>
+    <link rel="stylesheet" href="../../../style.css" />
+  </head>
+  <body class="admin-body">
+    <!-- Header Profesional -->
+    <header class="admin-header-pro">
+      <div class="admin-header-content">
+        <a href="../adminHome/adminHome.html" class="admin-brand" style="text-decoration:none; color:inherit">
+          <div class="admin-brand-icon">V</div>
+          <div>
+            <h1 class="admin-brand-title">Panel de Administración</h1>
+            <div class="admin-brand-subtitle">Sistema de gestión empresarial</div>
+          </div>
+        </a>
+        <nav class="admin-nav-pro">
+          <a class="admin-nav-link" href="../categories/categories.html">
+            <svg width="16" height="16" fill="currentColor"><path d="M3 3h4v4H3zM9 3h4v4H9zM3 9h4v4H3zM9 9h4v4H9z"/></svg>
+            Categorías
+          </a>
+          <a class="admin-nav-link" href="../products/products.html">
+            <svg width="16" height="16" fill="currentColor"><path d="M2 2h12v2H2zm0 4h12v2H2zm0 4h12v2H2zm0 4h12v2H2z"/></svg>
+            Productos
+          </a>
+          <a class="admin-nav-link" href="../orders/orders.html">
+            <svg width="16" height="16" fill="currentColor"><path d="M3 3h10v10H3z"/></svg>
+            Pedidos
+          </a>
+          <button id="logoutBtn" class="admin-logout-btn">
+            <svg width="14" height="14" fill="currentColor"><path d="M10 2v2h3v10H3V4h3V2H1v14h14V2z"/></svg>
+            Salir
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <!-- Main Dashboard -->
+    <main class="admin-main-pro">
+      <div class="admin-container-pro">
+        
+        <!-- KPIs Row -->
+        <div class="admin-kpi-row">
+          <div class="admin-kpi-card">
+            <div class="admin-kpi-header">
+              <span class="admin-kpi-label">Categorías totales</span>
+              <div class="admin-kpi-icon" style="background:#2563eb">
+                <svg width="20" height="20" fill="#fff"><rect x="3" y="3" width="5" height="5" rx="1"/><rect x="10" y="3" width="5" height="5" rx="1"/><rect x="3" y="10" width="5" height="5" rx="1"/><rect x="10" y="10" width="5" height="5" rx="1"/></svg>
+              </div>
+            </div>
+            <div class="admin-kpi-value" id="catTotal">0</div>
+            <div class="admin-kpi-detail">
+              <span class="admin-kpi-stat success"><span id="catActivas">0</span> activas</span>
+              <span class="admin-kpi-divider">·</span>
+              <span class="admin-kpi-stat muted"><span id="catInactivas">0</span> inactivas</span>
+            </div>
+          </div>
+
+          <div class="admin-kpi-card">
+            <div class="admin-kpi-header">
+              <span class="admin-kpi-label">Productos totales</span>
+              <div class="admin-kpi-icon" style="background:#10b981">
+                <svg width="20" height="20" fill="#fff"><path d="M3 3h14v3H3zm0 5h14v2H3zm0 4h14v2H3zm0 4h14v2H3z"/></svg>
+              </div>
+            </div>
+            <div class="admin-kpi-value" id="prodTotal">0</div>
+            <div class="admin-kpi-detail">
+              <span class="admin-kpi-stat success"><span id="prodDisponibles">0</span> disponibles</span>
+              <span class="admin-kpi-divider">·</span>
+              <span class="admin-kpi-stat muted"><span id="prodNoDisponibles">0</span> agotados</span>
+            </div>
+          </div>
+
+          <div class="admin-kpi-card">
+            <div class="admin-kpi-header">
+              <span class="admin-kpi-label">Pedidos pendientes</span>
+              <div class="admin-kpi-icon" style="background:#f59e0b">
+                <svg width="20" height="20" fill="#fff"><circle cx="10" cy="10" r="7"/></svg>
+              </div>
+            </div>
+            <div class="admin-kpi-value" id="pendingCount">0</div>
+            <div class="admin-kpi-detail">
+              <span class="admin-kpi-stat info"><span id="processingCount">0</span> procesando</span>
+            </div>
+          </div>
+
+          <div class="admin-kpi-card">
+            <div class="admin-kpi-header">
+              <span class="admin-kpi-label">Completados</span>
+              <div class="admin-kpi-icon" style="background:#10b981">
+                <svg width="20" height="20" fill="#fff"><path d="M7 13l-4-4 1.5-1.5L7 10l7.5-7.5L16 4z"/></svg>
+              </div>
+            </div>
+            <div class="admin-kpi-value" id="completedCount">0</div>
+            <div class="admin-kpi-detail">
+              <span class="admin-kpi-stat danger"><span id="cancelledCount">0</span> cancelados</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Content Row -->
+        <div class="admin-content-row">
+          <!-- Chart Card -->
+          <div class="admin-card-pro chart-card">
+            <div class="admin-card-header">
+              <h3 class="admin-card-title">Pedidos por estado</h3>
+            </div>
+            <div class="admin-card-body">
+              <svg id="ordersDonut" width="180" height="180" viewBox="0 0 42 42">
+                <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#f3f4f6" stroke-width="4"></circle>
+              </svg>
+            </div>
+          </div>
+
+          <!-- Top Products -->
+          <div class="admin-card-pro">
+            <div class="admin-card-header">
+              <h3 class="admin-card-title">Top productos</h3>
+              <span class="admin-card-action">Ver todos</span>
+            </div>
+            <div class="admin-card-body">
+              <div id="topProducts" class="admin-list-pro">
+                <div class="admin-skeleton"></div>
+                <div class="admin-skeleton" style="width:85%"></div>
+                <div class="admin-skeleton" style="width:70%"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Actions -->
+          <div class="admin-card-pro">
+            <div class="admin-card-header">
+              <h3 class="admin-card-title">Actividad reciente</h3>
+              <span class="admin-card-action" id="updatedAt">Actualizado: —</span>
+            </div>
+            <div class="admin-card-body">
+              <div id="recentActions" class="admin-list-pro">
+                <div class="admin-skeleton"></div>
+                <div class="admin-skeleton" style="width:90%"></div>
+                <div class="admin-skeleton" style="width:80%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Actions Bar -->
+        <div class="admin-actions-bar">
+          <div class="admin-actions-group">
+            <a href="../categories/categories.html" class="admin-action-btn secondary">
+              <svg width="16" height="16" fill="currentColor"><path d="M8 3v10M3 8h10"/></svg>
+              Nueva categoría
+            </a>
+            <a href="../products/products.html" class="admin-action-btn secondary">
+              <svg width="16" height="16" fill="currentColor"><path d="M8 3v10M3 8h10"/></svg>
+              Nuevo producto
+            </a>
+            <a href="../orders/orders.html" class="admin-action-btn">
+              Ver todos los pedidos
+            </a>
+          </div>
+          <button id="refreshBtn" class="admin-action-btn primary">
+            <svg width="14" height="14" fill="currentColor"><path d="M8 3v2h3l-4 4-4-4h3V3h2z"/></svg>
+            Actualizar dashboard
+          </button>
+        </div>
+
+        <!-- States -->
+        <div id="adminLoading" class="admin-loader hidden"></div>
+        <div id="adminError" class="admin-alert error hidden">Error cargando el dashboard</div>
+        <div id="adminEmpty" class="admin-alert info hidden">No hay datos disponibles</div>
+      </div>
+    </main>
+
+    <script type="module" src="./adminHome.ts"></script>
+  </body>
+  </html>
+
+

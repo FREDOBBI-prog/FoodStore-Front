@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Vittov — Carrito</title>
+    <link rel="stylesheet" href="../../../style.css" />
+  </head>
+  <body>
+    <nav class="navbar">
+      <a href="../home/home.html"><strong>Vittov</strong></a>
+      <div class="nav-right">
+        <a href="../cart/cart.html" class="cart-link"><span class="cart-icon">🛒</span><span id="cartCount" class="badge badge-secondary">0</span></a>
+        <span id="userName" class="muted"></span>
+        <button id="logoutBtn" class="btn outline">Salir</button>
+      </div>
+    </nav>
+    <main class="container">
+      <div id="cartLoading" class="loader hidden"></div>
+      <div id="cartError" class="alert error hidden">No se pudo cargar el carrito.</div>
+      <div class="grid cart-layout">
+        <section id="cartItems" class="cart-list"></section>
+        <aside class="cart-summary">
+          <h3>Resumen</h3>
+          <div class="row"><span>Subtotal</span><strong class="right" id="subtotal">$0</strong></div>
+          <div class="row total"><span>Total</span><strong class="right" id="total">$0</strong></div>
+          <div id="tableInfo" class="row mesa-info" style="display:none"></div>
+          <div class="space"></div>
+          <button id="checkoutBtn" class="btn primary block">Siguiente</button>
+          <button id="clearBtn" class="btn danger block">Vaciar Carrito</button>
+        </aside>
+      </div>
+      <div id="emptyState" class="banner" style="display:none; justify-content:center;">Tu carrito está vacío. Agregá productos para continuar.</div>
+      <div class="modal" id="checkoutModal"></div>
+      <div class="modal-backdrop" id="modalBackdrop"></div>
+    </main>
+    <script type="module" src="./cart.ts"></script>
+  </body>
+</html>
+
+

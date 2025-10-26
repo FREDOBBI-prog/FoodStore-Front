@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Vittov — Categorías</title>
+    <link rel="stylesheet" href="../../../style.css" />
+  </head>
+  <body class="admin-body">
+    <!-- Header Profesional -->
+    <header class="admin-header-pro">
+      <div class="admin-header-content">
+        <a href="../adminHome/adminHome.html" class="admin-brand" style="text-decoration:none; color:inherit">
+          <div class="admin-brand-icon">V</div>
+          <div>
+            <h1 class="admin-brand-title">Panel de Administración</h1>
+            <div class="admin-brand-subtitle">Gestión de categorías</div>
+          </div>
+        </a>
+        <nav class="admin-nav-pro">
+          <a class="admin-nav-link active" href="../categories/categories.html">
+            <svg width="16" height="16" fill="currentColor"><path d="M3 3h4v4H3zM9 3h4v4H9zM3 9h4v4H3zM9 9h4v4H9z"/></svg>
+            Categorías
+          </a>
+          <a class="admin-nav-link" href="../products/products.html">
+            <svg width="16" height="16" fill="currentColor"><path d="M2 2h12v2H2zm0 4h12v2H2zm0 4h12v2H2zm0 4h12v2H2z"/></svg>
+            Productos
+          </a>
+          <a class="admin-nav-link" href="../orders/orders.html">
+            <svg width="16" height="16" fill="currentColor"><path d="M3 3h10v10H3z"/></svg>
+            Pedidos
+          </a>
+          <button id="logoutBtn" class="admin-logout-btn">
+            <svg width="14" height="14" fill="currentColor"><path d="M10 2v2h3v10H3V4h3V2H1v14h14V2z"/></svg>
+            Salir
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="admin-main-pro">
+      <div class="admin-container-pro">
+        <!-- Page Header -->
+        <div class="admin-page-header">
+          <div>
+            <h2 class="admin-page-title">Categorías</h2>
+            <p class="admin-page-subtitle">Administra las categorías de productos</p>
+          </div>
+          <button id="newBtn" class="admin-action-btn primary">
+            <svg width="16" height="16" fill="currentColor"><path d="M8 3v10M3 8h10"/></svg>
+            Nueva categoría
+          </button>
+        </div>
+
+        <!-- States -->
+        <div id="errorBox" class="admin-alert error hidden"></div>
+        <div id="loading" class="admin-loader hidden"></div>
+        <div id="emptyState" class="admin-alert info hidden">No hay categorías registradas</div>
+
+        <!-- Table Card -->
+        <div class="admin-table-card">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Imagen</th>
+                <th>Nombre</th>
+                <th>Descripción</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+
+    <div class="modal-backdrop" id="modalBackdrop" aria-hidden="true"></div>
+    <div class="modal" id="editModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" tabindex="-1" style="display:none"></div>
+    <script type="module" src="./categories.ts"></script>
+  </body>
+  </html>
+
+
