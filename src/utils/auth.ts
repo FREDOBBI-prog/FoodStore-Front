@@ -48,8 +48,9 @@ export function guard(pageRole: 'admin' | 'cliente' | 'any' = 'any'): void {
     window.location.href = '/src/pages/store/home/home.html';
     return;
   }
-  if (pageRole === 'cliente' && session.role !== 'cliente') {
-    // Si intenta acceder a cliente siendo admin, redirigir al panel admin
+  // Permitir que admins también accedan a la tienda (cliente)
+  if (pageRole === 'cliente' && session.role !== 'cliente' && session.role !== 'admin') {
+    // Solo redirigir si NO es ni cliente ni admin
     window.location.href = '/src/pages/admin/adminHome/adminHome.html';
   }
 }

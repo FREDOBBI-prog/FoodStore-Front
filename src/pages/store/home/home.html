@@ -10,9 +10,35 @@
     <nav class="navbar">
       <a href="./home.html"><strong>Vittov</strong></a>
       <div class="nav-right">
-        <a href="../cart/cart.html" class="cart-link"><span class="cart-icon">🛒</span><span id="cartCount" class="badge badge-secondary">0</span></a>
-        <span id="userName" class="muted"></span>
-        <button id="logoutBtn" class="btn outline">Salir</button>
+        <a href="../cart/cart.html" class="cart-link" aria-label="Carrito">
+          <span class="cart-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M6 6h15l-1.5 9h-12L6 6z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+              <path d="M6 6L5 3H3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+              <circle cx="9.5" cy="19" r="1.5" fill="currentColor"/>
+              <circle cx="17" cy="19" r="1.5" fill="currentColor"/>
+            </svg>
+          </span>
+          <span id="cartCount" class="badge badge-secondary">0</span>
+        </a>
+        <div class="user-menu">
+          <button id="userMenuBtn" class="avatar-btn" aria-haspopup="true" aria-expanded="false" title="Cuenta" aria-label="Cuenta">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5z" stroke="currentColor" stroke-width="1.6"/>
+              <path d="M3 21c1.8-3.6 5.4-5.4 9-5.4s7.2 1.8 9 5.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
+          </button>
+          <div id="userDropdown" class="dropdown hidden" role="menu" aria-label="Menú de usuario">
+            <div class="dropdown-header">
+              <strong id="menuUserName">Usuario</strong>
+              <div class="muted" id="menuUserEmail"></div>
+            </div>
+            <a href="#" id="accountLink" class="dropdown-item">Cuenta</a>
+            <a href="../../client/orders/orders.html" id="ordersLink" class="dropdown-item">Mis pedidos</a>
+            <a href="../../admin/adminHome/adminHome.html" id="adminLink" class="dropdown-item">Panel de admin</a>
+            <button id="logoutMenuBtn" class="dropdown-item danger" type="button">Cerrar sesión</button>
+          </div>
+        </div>
       </div>
     </nav>
     <main class="container">

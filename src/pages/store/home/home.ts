@@ -3,7 +3,7 @@ import { get } from '../../../utils/api';
 import type { ICategoria } from '../../../types/ICategoria';
 import { formatCurrency, onReady } from '../../../utils/navigate';
 import { addItem, getCart } from '../../../utils/cart';
-import { guard, getSession, logout } from '../../../utils/auth';
+import { guard, getSession, isAdmin, logout } from '../../../utils/auth';
 
 interface MenuSection {
   name: string;
@@ -305,7 +305,7 @@ function pickImage(category: string): string {
   return map[category] || 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=800&auto=format&fit=crop';
 }
 
-onReady(() => {
+onReady(async () => {
   guard('cliente');
   const container = document.querySelector<HTMLDivElement>('#productsGrid');
   const resultCount = document.querySelector<HTMLParagraphElement>('#resultCount');
@@ -315,16 +315,53 @@ onReady(() => {
 
   setupNavbar();
   errorBox.style.display = 'none';
-  loading.style.display = 'none';
-  renderSections(container, resultCount, menuSections, offlineProducts);
+  loading.style.display = 'block';
 
-  container.addEventListener('click', (ev) => {
+  try {
+    // Cargar categorías y productos desde la API
+    const [categories, products] = await Promise.all([
+      get<ICategoria[]>('/categories'),
+      get<IProduct[]>('/products')
+    ]);
+
+    // Filtrar solo productos disponibles
+    availableProducts = products.filter(p => p.available);
+
+    // Agrupar por categoría
+    const productsByCategory = categories
+      .filter(cat => cat.active)
+      .map(cat => ({
+        name: cat.name,
+        imageKey: cat.name,
+        products: availableProducts.filter(p => p.categoryId === cat.id)
+      }))
+      .filter(section => section.products.length > 0);
+
+    loading.style.display = 'none';
+    renderSectionsFromAPI(container, resultCount, productsByCategory, availableProducts);
+  } catch (error) {
+    loading.style.display = 'none';
+    errorBox.style.display = 'block';
+    errorBox.textContent = (error as Error).message || 'Error al cargar productos';
+    // Fallback a datos offline si falla la API
+    renderSections(container, resultCount, menuSections, offlineProducts);
+  }
+
+  container.addEventListener('click', async (ev) => {
     const btn = (ev.target as HTMLElement).closest('button[data-action="add"]') as HTMLButtonElement | null;
     if (!btn) return;
     const id = Number(btn.dataset.id || '0');
-    const product = offlineProducts.find((p) => p.id === id);
-    if (!product) return;
+    
     try {
+      // Cargar producto desde API si no está en memoria
+      let product = availableProducts?.find((p) => p.id === id);
+      if (!product) {
+        product = await get<IProduct>(`/products/${id}`);
+      }
+      if (!product) {
+        alert('Producto no encontrado');
+        return;
+      }
       addItem(product, 1);
       const cartCount = document.querySelector<HTMLSpanElement>('#cartCount');
       if (cartCount) cartCount.textContent = String(getCart().items.reduce((a, b) => a + b.qty, 0));
@@ -335,6 +372,8 @@ onReady(() => {
     }
   });
 });
+
+let availableProducts: IProduct[] = [];
 
 function renderSections(
   container: HTMLDivElement,
@@ -369,13 +408,91 @@ function renderSections(
     .join('');
 }
 
+function renderSectionsFromAPI(
+  container: HTMLDivElement,
+  resultCount: HTMLParagraphElement,
+  sections: Array<{ name: string; imageKey: string; products: IProduct[] }>,
+  allProducts: IProduct[],
+): void {
+  resultCount.textContent = `${allProducts.length} producto${allProducts.length !== 1 ? 's' : ''} disponibles`;
+  container.innerHTML = sections
+    .map((section) => {
+      const cards = section.products
+        .map((p) => {
+          return `
+            <article class="card">
+              <img src="${p.imageUrl}" alt="${p.name}" />
+              <div class="card-body">
+                <h4 class="card-title">${p.name}</h4>
+                <p class="card-subtitle">${p.description}</p>
+                <strong>${formatCurrency(p.price)}</strong>
+                <div class="card-actions">
+                  <button class="btn" data-action="add" data-id="${p.id}">Agregar</button>
+                </div>
+              </div>
+            </article>`;
+        })
+        .join('');
+      return cards
+        ? `<section class="category-section"><h2 class="category-title">${section.name}</h2><div class="menu-container">${cards}</div></section>`
+        : '';
+    })
+    .join('');
+}
+
 function setupNavbar(): void {
   const session = getSession();
-  const userName = document.querySelector<HTMLSpanElement>('#userName');
-  if (userName && session) userName.textContent = session.name;
-  document.getElementById('logoutBtn')?.addEventListener('click', () => logout());
   const cartCount = document.querySelector<HTMLSpanElement>('#cartCount');
   if (cartCount) cartCount.textContent = String(getCart().items.reduce((a, b) => a + b.qty, 0));
+
+  // Menú de usuario
+  const dropdown = document.getElementById('userDropdown');
+  const btn = document.getElementById('userMenuBtn');
+  const nameEl = document.getElementById('menuUserName');
+  const emailEl = document.getElementById('menuUserEmail');
+  const ordersLink = document.getElementById('ordersLink') as HTMLAnchorElement | null;
+  const adminLink = document.getElementById('adminLink') as HTMLAnchorElement | null;
+  const accountLink = document.getElementById('accountLink') as HTMLAnchorElement | null;
+  const logoutBtn = document.getElementById('logoutMenuBtn');
+
+  if (nameEl && session) nameEl.textContent = session.name || session.email || 'Usuario';
+  if (emailEl && session) emailEl.textContent = session.email || '';
+
+  // Visibilidad condicional
+  if (ordersLink) ordersLink.style.display = session && session.role === 'cliente' ? 'block' : 'none';
+  if (adminLink) adminLink.style.display = isAdmin() ? 'block' : 'none';
+  if (accountLink) accountLink.addEventListener('click', (e) => { e.preventDefault(); });
+
+  // Toggle dropdown
+  if (btn && dropdown) {
+    const toggle = (): void => {
+      const isOpen = !dropdown.classList.contains('hidden');
+      if (isOpen) {
+        dropdown.classList.add('hidden');
+        btn.setAttribute('aria-expanded', 'false');
+      } else {
+        dropdown.classList.remove('hidden');
+        btn.setAttribute('aria-expanded', 'true');
+      }
+    };
+    btn.addEventListener('click', (e) => { e.stopPropagation(); toggle(); });
+    document.addEventListener('click', (e) => {
+      if (!dropdown || dropdown.classList.contains('hidden')) return;
+      const target = e.target as HTMLElement;
+      if (!target.closest('.user-menu')) {
+        dropdown.classList.add('hidden');
+        btn.setAttribute('aria-expanded', 'false');
+      }
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !dropdown.classList.contains('hidden')) {
+        dropdown.classList.add('hidden');
+        btn.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
+
+  if (logoutBtn) logoutBtn.addEventListener('click', () => logout());
 }
 
 

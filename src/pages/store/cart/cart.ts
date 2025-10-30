@@ -2,7 +2,7 @@ import { clearCart, getCart, removeItem, updateQty } from '../../../utils/cart';
 import type { ICart } from '../../../types/ICart';
 import { formatCurrency, onReady } from '../../../utils/navigate';
 import { post } from '../../../utils/api';
-import { guard, getSession, logout } from '../../../utils/auth';
+import { guard, getSession, isAdmin, logout } from '../../../utils/auth';
 import type { IOrder } from '../../../types/IOrders';
 
 const ORDER_EVENT = 'fs:order:new';
@@ -192,15 +192,57 @@ async function submitOrder(ev: SubmitEvent): Promise<void> {
 
 function setupNavbar(): void {
   const user = getSession();
-  const userName = document.querySelector<HTMLSpanElement>('#userName');
-  const logoutBtn = document.querySelector<HTMLButtonElement>('#logoutBtn');
   const cartCount = document.querySelector<HTMLSpanElement>('#cartCount');
-  if (userName && user) userName.textContent = user.email;
-  if (logoutBtn) logoutBtn.addEventListener('click', () => logout());
   if (cartCount) {
     const totalQty = getCart().items.reduce((acc, item) => acc + item.qty, 0);
     cartCount.textContent = String(totalQty);
   }
+
+  // Dropdown de usuario
+  const dropdown = document.getElementById('userDropdown');
+  const btn = document.getElementById('userMenuBtn');
+  const nameEl = document.getElementById('menuUserName');
+  const emailEl = document.getElementById('menuUserEmail');
+  const ordersLink = document.getElementById('ordersLink') as HTMLAnchorElement | null;
+  const adminLink = document.getElementById('adminLink') as HTMLAnchorElement | null;
+  const accountLink = document.getElementById('accountLink') as HTMLAnchorElement | null;
+  const logoutBtn = document.getElementById('logoutMenuBtn');
+
+  if (nameEl && user) nameEl.textContent = user.name || user.email || 'Usuario';
+  if (emailEl && user) emailEl.textContent = user.email || '';
+  if (ordersLink) ordersLink.style.display = user && user.role === 'cliente' ? 'block' : 'none';
+  if (adminLink) adminLink.style.display = isAdmin() ? 'block' : 'none';
+  if (accountLink) accountLink.addEventListener('click', (e) => { e.preventDefault(); });
+
+  if (btn && dropdown) {
+    const toggle = (): void => {
+      const isOpen = !dropdown.classList.contains('hidden');
+      if (isOpen) {
+        dropdown.classList.add('hidden');
+        btn.setAttribute('aria-expanded', 'false');
+      } else {
+        dropdown.classList.remove('hidden');
+        btn.setAttribute('aria-expanded', 'true');
+      }
+    };
+    btn.addEventListener('click', (e) => { e.stopPropagation(); toggle(); });
+    document.addEventListener('click', (e) => {
+      if (!dropdown || dropdown.classList.contains('hidden')) return;
+      const target = e.target as HTMLElement;
+      if (!target.closest('.user-menu')) {
+        dropdown.classList.add('hidden');
+        btn.setAttribute('aria-expanded', 'false');
+      }
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !dropdown.classList.contains('hidden')) {
+        dropdown.classList.add('hidden');
+        btn.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
+
+  if (logoutBtn) logoutBtn.addEventListener('click', () => logout());
 }
 
 

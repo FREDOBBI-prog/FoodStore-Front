@@ -67,7 +67,7 @@ onReady(async () => {
     const modal = document.querySelector<HTMLDivElement>('#editModal');
     const backdrop = document.querySelector<HTMLDivElement>('#modalBackdrop');
     if (!modal || !backdrop) return;
-    const data: Partial<IProduct> | undefined = id ? getRowData(id) : undefined;
+    const data: Partial<IProduct> | undefined = id ? await getRowData(id) : undefined;
     const cats = await get<ICategoria[]>('/categories');
     modal.innerHTML = `
       <h3 id="modalTitle">${id ? 'Editar' : 'Nuevo'} producto</h3>
@@ -115,20 +115,14 @@ onReady(async () => {
     });
   }
 
-  function getRowData(id: number): IProduct | undefined {
-    const tr = document.querySelector<HTMLTableRowElement>(`tr[data-id="${id}"]`);
-    if (!tr) return undefined;
-    const tds = tr.querySelectorAll('td');
-    return {
-      id,
-      imageUrl: (tds[1].querySelector('img') as HTMLImageElement).src,
-      name: tds[2].textContent || '',
-      description: tds[3].textContent || '',
-      price: parseFromCurrency(tds[4].textContent || '0'),
-      categoryId: 0,
-      stock: Number(tds[6].textContent || '0'),
-      available: (tds[7].textContent || '') === 'Sí',
-    } as IProduct;
+  async function getRowData(id: number): Promise<IProduct | undefined> {
+    try {
+      const product = await get<IProduct>(`/products/${id}`);
+      return product;
+    } catch (e) {
+      alert((e as Error).message || 'Error al cargar producto');
+      return undefined;
+    }
   }
 
   async function onDelete(id: number): Promise<void> {
