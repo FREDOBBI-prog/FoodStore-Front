@@ -31,26 +31,26 @@ export function isAdmin(): boolean {
 export function logout(): void {
   localStorage.removeItem(FS_USER);
   localStorage.removeItem(FS_CART);
-  // Usar ruta absoluta desde la raíz del proyecto
+  // ruta absoluta porque a veces relativa no funciona bien
   window.location.href = '/src/pages/auth/login/login.html';
 }
 
 export function guard(pageRole: 'admin' | 'cliente' | 'any' = 'any'): void {
   const session = getSession();
   if (!session) {
-    // Si no hay sesión, redirigir al login
+    // no hay sesion, mandalo al login
     window.location.href = '/src/pages/auth/login/login.html';
     return;
   }
   if (pageRole === 'any') return;
   if (pageRole === 'admin' && session.role !== 'admin') {
-    // Si intenta acceder a admin sin ser admin, redirigir a la tienda
+    // quiso entrar a admin sin ser admin, chau
     window.location.href = '/src/pages/store/home/home.html';
     return;
   }
-  // Permitir que admins también accedan a la tienda (cliente)
+  // los admins pueden entrar a la tienda tambien
   if (pageRole === 'cliente' && session.role !== 'cliente' && session.role !== 'admin') {
-    // Solo redirigir si NO es ni cliente ni admin
+    // solo redirigir si no es cliente ni admin
     window.location.href = '/src/pages/admin/adminHome/adminHome.html';
   }
 }

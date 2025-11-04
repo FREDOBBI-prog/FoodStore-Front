@@ -17,20 +17,20 @@ onReady(async () => {
   await reload();
 
   async function reload(): Promise<void> {
-    rows.innerHTML = '';
-    errorBox.classList.add('hidden');
-    empty.classList.add('hidden');
-    loading.classList.remove('hidden');
+    rows!.innerHTML = '';
+    errorBox!.classList.add('hidden');
+    empty!.classList.add('hidden');
+    loading!.classList.remove('hidden');
     try {
       const cats = await get<ICategoria[]>('/categories');
-      if (cats.length === 0) { empty.classList.remove('hidden'); return; }
-      rows.innerHTML = cats.map(renderRow).join('');
-      rows.addEventListener('click', onRowClick);
+      if (cats.length === 0) { empty!.classList.remove('hidden'); return; }
+      rows!.innerHTML = cats.map(renderRow).join('');
+      rows!.addEventListener('click', onRowClick);
     } catch (e) {
-      errorBox.textContent = (e as Error).message || 'Error al cargar categorías';
-      errorBox.classList.remove('hidden');
+      errorBox!.textContent = (e as Error).message || 'Error al cargar categorías';
+      errorBox!.classList.remove('hidden');
     } finally {
-      loading.classList.add('hidden');
+      loading!.classList.add('hidden');
     }
   }
 
@@ -88,13 +88,13 @@ onReady(async () => {
           <button class="btn outline right" type="button" id="closeModal">Cancelar</button>
         </div>
       </form>`;
-    function close(): void { modal.style.display = 'none'; backdrop.classList.remove('open'); }
-    modal.style.display = 'block';
-    backdrop.classList.add('open');
-    backdrop.addEventListener('click', close);
-    modal.querySelector<HTMLButtonElement>('#closeModal')?.addEventListener('click', close);
-    // CRUD: POST /categories, PUT /categories/{id}
-    modal.querySelector<HTMLFormElement>('#catForm')?.addEventListener('submit', async (e) => {
+    function close(): void { modal!.style.display = 'none'; backdrop!.classList.remove('open'); }
+    modal!.style.display = 'block';
+    backdrop!.classList.add('open');
+    backdrop!.addEventListener('click', close);
+    modal!.querySelector<HTMLButtonElement>('#closeModal')?.addEventListener('click', close);
+    // post para crear, put para editar
+    modal!.querySelector<HTMLFormElement>('#catForm')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const name = (document.querySelector<HTMLInputElement>('#name')?.value || '').trim();
       const description = (document.querySelector<HTMLTextAreaElement>('#description')?.value || '').trim();
@@ -140,7 +140,12 @@ onReady(async () => {
 });
 
 function isValidUrl(url: string): boolean {
-  try { new URL(url); return true; } catch { return false; }
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 

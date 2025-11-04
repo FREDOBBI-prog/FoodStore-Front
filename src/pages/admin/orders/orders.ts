@@ -23,19 +23,19 @@ onReady(async () => {
   await reload();
 
   async function reload(): Promise<void> {
-    grid.innerHTML = '';
-    errorBox.classList.add('hidden');
-    empty.classList.add('hidden');
-    loading.classList.remove('hidden');
+    grid!.innerHTML = '';
+    errorBox!.classList.add('hidden');
+    empty!.classList.add('hidden');
+    loading!.classList.remove('hidden');
     try {
-      const orders = await get<IOrder[]>(filter.value ? `/orders/status/${filter.value}` : '/orders');
+      const orders = await get<IOrder[]>(filter!.value ? `/orders/status/${filter!.value}` : '/orders');
       if (orders.length === 0) {
-        empty.classList.remove('hidden');
+        empty!.classList.remove('hidden');
         return;
       }
       orders.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
-      grid.innerHTML = orders.map(renderCard).join('');
-      grid.addEventListener('click', (ev) => {
+      grid!.innerHTML = orders.map(renderCard).join('');
+      grid!.addEventListener('click', (ev) => {
         const card = (ev.target as HTMLElement).closest('[data-order-id]') as HTMLElement | null;
         if (!card) return;
         const id = Number(card.dataset.orderId);
@@ -43,10 +43,10 @@ onReady(async () => {
         if (order) openModal(order);
       });
     } catch (e) {
-      errorBox.textContent = (e as Error).message || 'Error al cargar pedidos';
-      errorBox.classList.remove('hidden');
+      errorBox!.textContent = (e as Error).message || 'Error al cargar pedidos';
+      errorBox!.classList.remove('hidden');
     } finally {
-      loading.classList.add('hidden');
+      loading!.classList.add('hidden');
     }
   }
 });
@@ -128,12 +128,12 @@ function openModal(o: IOrder): void {
       <button class="btn" id="updateStatus">Actualizar Estado</button>
       <button class="btn outline right" id="closeModal">Cerrar</button>
     </div>`;
-  modal.style.display = 'block';
-  backdrop.classList.add('open');
-  backdrop.addEventListener('click', close);
-  modal.querySelector<HTMLButtonElement>('#closeModal')?.addEventListener('click', close);
-  modal.querySelector<HTMLButtonElement>('#updateStatus')?.addEventListener('click', async () => {
-    const status = (modal.querySelector<HTMLSelectElement>('#statusSel')?.value || 'pending') as OrderStatus;
+  modal!.style.display = 'block';
+  backdrop!.classList.add('open');
+  backdrop!.addEventListener('click', close);
+  modal!.querySelector<HTMLButtonElement>('#closeModal')?.addEventListener('click', close);
+  modal!.querySelector<HTMLButtonElement>('#updateStatus')?.addEventListener('click', async () => {
+    const status = (modal!.querySelector<HTMLSelectElement>('#statusSel')?.value || 'pending') as OrderStatus;
     try {
       await patch<IOrder, { status: OrderStatus }>(`/orders/${o.id}/status`, { status });
       alert('Estado actualizado');
@@ -145,8 +145,8 @@ function openModal(o: IOrder): void {
   });
 
   function close(): void {
-    modal.style.display = 'none';
-    backdrop.classList.remove('open');
+    modal!.style.display = 'none';
+    backdrop!.classList.remove('open');
   }
 }
 

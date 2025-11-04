@@ -85,10 +85,10 @@ html, body {
 .card-actions { display:flex; gap:8px; margin-top:8px; }
 
 /* Buttons */
-.btn { border:none; border-radius:8px; padding:10px 14px; background:var(--primary); color:#fff; cursor:pointer; }
-.btn.secondary { background:var(--secondary); }
-.btn.outline { background:#fff; color:var(--primary); border:1px solid var(--primary); }
-.btn.danger { background:var(--danger); }
+.btn { border:none; border-radius:8px; padding:10px 14px; background:var(--primary) !important; color:#fff !important; cursor:pointer; font-weight:600; }
+.btn.secondary { background:var(--secondary) !important; }
+.btn.outline { background:#fff !important; color:var(--primary) !important; border:1px solid var(--primary); }
+.btn.danger { background:var(--danger) !important; }
 .btn.block { width:100%; }
 .btn:disabled { opacity: .6; cursor:not-allowed; }
 
@@ -300,14 +300,19 @@ h2{font-size:20px; font-weight:800; margin:0 0 12px; color:var(--primary)}
 
 .row-actions{display:flex; flex-wrap:wrap; gap:10px}
 .btn{
-  border:1px solid rgba(0,0,0,.06); background:#fff;
+  border:none;
   padding:10px 14px; border-radius:10px; cursor:pointer; font-weight:700;
   box-shadow:var(--shadow-sm);
+  background:var(--primary) !important;
+  color:#fff !important;
 }
-.btn.primary{background:var(--primary); color:#fff; border-color:transparent}
-.btn.primary:hover{background:var(--primary-700)}
-.btn.outline{background:#fff}
+.btn.primary{background:var(--primary) !important; color:#fff !important; border-color:transparent}
+.btn.primary:hover{background:var(--primary-700) !important}
+.btn.outline{background:#fff !important; color:var(--primary) !important; border:1px solid var(--primary)}
+.btn.danger{background:var(--danger) !important; color:#fff !important}
+.btn.secondary{background:var(--secondary) !important; color:#fff !important}
 .btn:focus{outline:none; box-shadow:var(--ring)}
+.btn:hover:not(.outline):not(.disabled){background:var(--primary-700) !important}
 
 .badge{
   display:inline-block; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:700;

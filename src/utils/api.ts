@@ -3,13 +3,13 @@ import type { ICategoria } from '../types/ICategoria';
 import type { IProduct } from '../types/IProduct';
 import type { IOrder } from '../types/IOrders';
 
-// API base URL
+// url base de la api
 const BASE_URL: string = (import.meta as unknown as { env: { VITE_API_BASE_URL?: string } }).env.VITE_API_BASE_URL || 'http://localhost:8080';
 
-// Modo demo opcional
+// modo mock desactivado por ahora
 const USE_MOCK: boolean = false;
 
-type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
+type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 
 class ApiError extends Error {
   public readonly status: number;
@@ -22,41 +22,45 @@ class ApiError extends Error {
   }
 }
 
-function buildUrl(path: string): string {
-  const sanitized = path.startsWith('/') ? path : `/${path}`;
-  return `${BASE_URL}${sanitized}`;
+function makeUrl(path: string): string {
+  if (!path.startsWith('/')) {
+    path = '/' + path;
+  }
+  return BASE_URL + path;
 }
 
 async function request<T>(path: string, method: HttpMethod, body?: unknown): Promise<T> {
   if (USE_MOCK) {
-    // Placeholder para modo mock (no requerido por consigna)
+    // modo mock no implementado aun
     await new Promise((r) => setTimeout(r, 200));
   }
 
-  const url = buildUrl(path);
-  const init: RequestInit = {
+  const url = makeUrl(path);
+  const options: RequestInit = {
     method,
     headers: { 'Content-Type': 'application/json' },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
   };
+  
+  if (body !== undefined) {
+    options.body = JSON.stringify(body);
+  }
 
   try {
-    const resp = await fetch(url, init);
+    const resp = await fetch(url, options);
     const contentType = resp.headers.get('content-type') || '';
     const isJson = contentType.includes('application/json');
-    const payload = isJson ? await resp.json() : await resp.text();
+    const data = isJson ? await resp.json() : await resp.text();
 
     if (!resp.ok) {
-      const message = (isJson && (payload as { message?: string }).message) || `Error HTTP ${resp.status}`;
-      throw new ApiError(message, resp.status, payload);
+      const msg = (isJson && (data as { message?: string }).message) || `Error HTTP ${resp.status}`;
+      throw new ApiError(msg, resp.status, data);
     }
-    return payload as T;
+    return data as T;
   } catch (err) {
     if (err instanceof ApiError) {
       throw err;
     }
-    const unknownError = err as Error;
-    throw new ApiError(unknownError.message || 'Error de red', 0);
+    throw new ApiError((err as Error).message || 'Error de red', 0);
   }
 }
 
@@ -76,12 +80,12 @@ export async function del<T>(path: string): Promise<T> {
   return request<T>(path, 'DELETE');
 }
 
-// Método PATCH para endpoints que actualizan parcialmente recursos
+// metodo patch para updates parciales
 export async function patch<T, B>(path: string, body: B): Promise<T> {
   return request<T>(path, 'PATCH', body as unknown);
 }
 
-// Endpoints esperados (solo tipos de ayuda, no funciones concretas)
+// tipos para los requests y responses
 export type LoginRequest = { email: string; password: string };
 export type RegisterRequest = { name: string; email: string; password: string; role?: 'cliente' | 'admin' | 'developer' };
 

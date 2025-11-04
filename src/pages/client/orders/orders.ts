@@ -12,20 +12,20 @@ onReady(async () => {
   const empty = document.querySelector<HTMLDivElement>('#emptyState');
   if (!grid || !errorBox || !loading || !empty) return;
   setupNavbar();
-  grid.innerHTML = '';
-  errorBox.style.display = 'none';
-  loading.style.display = 'block';
+  grid!.innerHTML = '';
+  errorBox!.style.display = 'none';
+  loading!.style.display = 'block';
   try {
     const session = getSession();
     const userId = session?.id;
     const orders = await get<IOrder[]>(userId ? `/orders/user/${userId}` : '/orders');
     if (orders.length === 0) {
-      empty.style.display = 'block';
+      empty!.style.display = 'block';
       return;
     }
     orders.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
-    grid.innerHTML = orders.map(renderCard).join('');
-    grid.addEventListener('click', (ev) => {
+    grid!.innerHTML = orders.map(renderCard).join('');
+    grid!.addEventListener('click', (ev) => {
       const card = (ev.target as HTMLElement).closest('[data-order-id]') as HTMLElement | null;
       if (!card) return;
       const id = Number(card.dataset.orderId);
@@ -33,10 +33,10 @@ onReady(async () => {
       if (order) openModal(order);
     });
   } catch (err) {
-    errorBox.textContent = (err as Error).message || 'Error al cargar pedidos';
-    errorBox.style.display = 'block';
+    errorBox!.textContent = (err as Error).message || 'Error al cargar pedidos';
+    errorBox!.style.display = 'block';
   } finally {
-    loading.style.display = 'none';
+    loading!.style.display = 'none';
   }
   window.addEventListener('storage', (ev) => {
     if (ev.key === 'FS_EVT') {
@@ -107,13 +107,13 @@ function openModal(o: IOrder): void {
     <div class="row">
       <button class="btn outline right" id="closeModal">Cerrar</button>
     </div>`;
-  modal.style.display = 'block';
-  backdrop.classList.add('open');
-  backdrop.addEventListener('click', close);
-  modal.querySelector<HTMLButtonElement>('#closeModal')?.addEventListener('click', close);
+  modal!.style.display = 'block';
+  backdrop!.classList.add('open');
+  backdrop!.addEventListener('click', close);
+  modal!.querySelector<HTMLButtonElement>('#closeModal')?.addEventListener('click', close);
   function close(): void {
-    modal.style.display = 'none';
-    backdrop.classList.remove('open');
+    modal!.style.display = 'none';
+    backdrop!.classList.remove('open');
   }
 }
 

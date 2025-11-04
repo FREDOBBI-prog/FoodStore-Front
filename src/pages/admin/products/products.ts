@@ -18,20 +18,20 @@ onReady(async () => {
   await reload();
 
   async function reload(): Promise<void> {
-    rows.innerHTML = '';
-    errorBox.classList.add('hidden');
-    empty.classList.add('hidden');
-    loading.classList.remove('hidden');
+    rows!.innerHTML = '';
+    errorBox!.classList.add('hidden');
+    empty!.classList.add('hidden');
+    loading!.classList.remove('hidden');
     try {
       const prods = await get<IProduct[]>('/products');
-      if (prods.length === 0) { empty.classList.remove('hidden'); return; }
-      rows.innerHTML = prods.map(renderRow).join('');
-      rows.addEventListener('click', onRowClick);
+      if (prods.length === 0) { empty!.classList.remove('hidden'); return; }
+      rows!.innerHTML = prods.map(renderRow).join('');
+      rows!.addEventListener('click', onRowClick);
     } catch (e) {
-      errorBox.textContent = (e as Error).message || 'Error al cargar productos';
-      errorBox.classList.remove('hidden');
+      errorBox!.textContent = (e as Error).message || 'Error al cargar productos';
+      errorBox!.classList.remove('hidden');
     } finally {
-      loading.classList.add('hidden');
+      loading!.classList.add('hidden');
     }
   }
 
@@ -85,13 +85,13 @@ onReady(async () => {
         <div class="field"><label><input id="available" type="checkbox" ${data?.available ? 'checked':''}/> Disponible</label></div>
         <div class="row"><button class="btn" type="submit">Guardar</button><button class="btn outline right" type="button" id="closeModal">Cancelar</button></div>
       </form>`;
-    function close(): void { modal.style.display = 'none'; backdrop.classList.remove('open'); }
-    modal.style.display = 'block';
-    backdrop.classList.add('open');
-    backdrop.addEventListener('click', close);
-    modal.querySelector<HTMLButtonElement>('#closeModal')?.addEventListener('click', close);
-    // CRUD: POST /products, PUT /products/{id}, DELETE /products/{id}
-    modal.querySelector<HTMLFormElement>('#prodForm')?.addEventListener('submit', async (e) => {
+    function close(): void { modal!.style.display = 'none'; backdrop!.classList.remove('open'); }
+    modal!.style.display = 'block';
+    backdrop!.classList.add('open');
+    backdrop!.addEventListener('click', close);
+    modal!.querySelector<HTMLButtonElement>('#closeModal')?.addEventListener('click', close);
+    // post crear, put editar, delete eliminar
+    modal!.querySelector<HTMLFormElement>('#prodForm')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const name = (document.querySelector<HTMLInputElement>('#name')?.value || '').trim();
       const description = (document.querySelector<HTMLTextAreaElement>('#description')?.value || '').trim();
@@ -136,7 +136,13 @@ onReady(async () => {
   }
 });
 
-function isValidUrl(url: string): boolean { try { new URL(url); return true; } catch { return false; } }
-function parseFromCurrency(text: string): number { return Number((text.replace(/[^0-9,.-]/g,'').replace('.', '').replace(',', '.')) || '0'); }
+function isValidUrl(url: string): boolean {
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 

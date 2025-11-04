@@ -15,21 +15,21 @@ onReady(async () => {
   const view = document.querySelector<HTMLDivElement>('#productView');
   if (!errorBox || !loading || !view || !Number.isFinite(id)) return;
 
-  errorBox.style.display = 'none';
-  loading.style.display = 'block';
+  errorBox!.style.display = 'none';
+  loading!.style.display = 'block';
   try {
     const product = await get<IProduct>(`/products/${id}`);
     render(product);
   } catch (err) {
-    errorBox.textContent = (err as Error).message || 'Error al cargar producto';
-    errorBox.style.display = 'block';
+    errorBox!.textContent = (err as Error).message || 'Error al cargar producto';
+    errorBox!.style.display = 'block';
   } finally {
-    loading.style.display = 'none';
+    loading!.style.display = 'none';
   }
 
   function render(p: IProduct): void {
     const disabled = !p.available || p.stock <= 0;
-    view.innerHTML = `
+    view!.innerHTML = `
       <div>
         <img src="${p.imageUrl}" alt="${p.name}" style="width:100%; height:auto; border-radius:10px;" />
       </div>

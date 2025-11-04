@@ -6,9 +6,6 @@ import { guard, getSession, isAdmin, logout } from '../../../utils/auth';
 import type { IOrder } from '../../../types/IOrders';
 
 const ORDER_EVENT = 'fs:order:new';
-// Visibilidad para validador: uso de FS_CART y shipping fijo
-const CART_KEY = 'FS_CART';
-const SHIPPING = 500;
 
 onReady(() => {
   guard('cliente');
@@ -27,11 +24,11 @@ function render(): void {
 
   const tableLabel = localStorage.getItem('FS_TABLE') || '';
   if (cart.items.length === 0) {
-    empty.style.display = 'flex';
-    list.innerHTML = '';
+    empty!.style.display = 'flex';
+    list!.innerHTML = '';
   } else {
-    empty.style.display = 'none';
-    list.innerHTML = cart.items
+    empty!.style.display = 'none';
+    list!.innerHTML = cart.items
       .map(
         (it) => `
         <article class="cart-item">
@@ -52,8 +49,8 @@ function render(): void {
       )
       .join('');
   }
-  subtotal.textContent = formatCurrency(cart.subtotal);
-  total.textContent = formatCurrency(cart.total);
+  subtotal!.textContent = formatCurrency(cart.subtotal);
+  total!.textContent = formatCurrency(cart.total);
   const mesaInfo = document.querySelector<HTMLDivElement>('#tableInfo');
   if (mesaInfo) {
     mesaInfo.innerHTML = tableLabel ? `<span class="muted">Mesa</span><strong>${tableLabel}</strong>` : '';
@@ -150,39 +147,53 @@ function openCheckout(modal: HTMLDivElement, backdrop: HTMLDivElement): void {
   if (form) form.addEventListener('submit', submitOrder);
 
   function close(): void {
-    modal.style.display = 'none';
-    modal.classList.remove('open');
-    backdrop.classList.remove('open');
+    modal!.style.display = 'none';
+    modal!.classList.remove('open');
+    backdrop!.classList.remove('open');
   }
 }
 
 async function submitOrder(ev: SubmitEvent): Promise<void> {
   ev.preventDefault();
-  const phone = (document.querySelector<HTMLInputElement>('#phone')?.value || '').trim();
-  const address = (document.querySelector<HTMLInputElement>('#address')?.value || '').trim();
-  const payment = (document.querySelector<HTMLSelectElement>('#payment')?.value || 'efectivo') as 'efectivo' | 'tarjeta' | 'transferencia';
-  const notes = (document.querySelector<HTMLTextAreaElement>('#notes')?.value || '').trim();
-  if (!phone || !address) { alert('Completá teléfono y dirección'); return; }
+  const phoneEl = document.querySelector<HTMLInputElement>('#phone');
+  const addressEl = document.querySelector<HTMLInputElement>('#address');
+  const paymentEl = document.querySelector<HTMLSelectElement>('#payment');
+  const notesEl = document.querySelector<HTMLTextAreaElement>('#notes');
+  
+  const phone = (phoneEl?.value || '').trim();
+  const address = (addressEl?.value || '').trim();
+  const payment = (paymentEl?.value || 'efectivo') as 'efectivo' | 'tarjeta' | 'transferencia';
+  const notes = (notesEl?.value || '').trim();
+  
+  if (!phone || !address) {
+    alert('Completá teléfono y dirección');
+    return;
+  }
+  
   const cart = getCart();
   try {
     const session = getSession();
-    const body = {
+    const orderData = {
       userId: session?.id ?? 0,
       userName: session?.name || session?.email || 'Cliente',
       status: 'pending' as const,
-      items: cart.items.map((i) => ({ productId: i.productId, qty: i.qty, price: i.price, name: i.name })),
+      items: cart.items.map((i) => ({
+        productId: i.productId,
+        qty: i.qty,
+        price: i.price,
+        name: i.name
+      })),
       subtotal: cart.subtotal,
       shipping: cart.shipping,
       total: cart.total,
       deliveryAddress: address,
       phone,
-      paymentMethod: payment as const,
+      paymentMethod: payment,
       notes,
     };
-    await post<IOrder, typeof body>('/orders', body);
-    const payload = { timestamp: Date.now(), body };
-    localStorage.setItem('FS_EVT', `order:${payload.timestamp}`);
-    window.dispatchEvent(new CustomEvent(ORDER_EVENT, { detail: payload }));
+    await post<IOrder, typeof orderData>('/orders', orderData);
+    localStorage.setItem('FS_EVT', `order:${Date.now()}`);
+    window.dispatchEvent(new CustomEvent(ORDER_EVENT));
     clearCart();
     window.location.href = '../../client/orders/orders.html';
   } catch (e) {
@@ -195,10 +206,10 @@ function setupNavbar(): void {
   const cartCount = document.querySelector<HTMLSpanElement>('#cartCount');
   if (cartCount) {
     const totalQty = getCart().items.reduce((acc, item) => acc + item.qty, 0);
-    cartCount.textContent = String(totalQty);
+    cartCount!.textContent = String(totalQty);
   }
 
-  // Dropdown de usuario
+  // menu del usuario
   const dropdown = document.getElementById('userDropdown');
   const btn = document.getElementById('userMenuBtn');
   const nameEl = document.getElementById('menuUserName');
@@ -216,13 +227,13 @@ function setupNavbar(): void {
 
   if (btn && dropdown) {
     const toggle = (): void => {
-      const isOpen = !dropdown.classList.contains('hidden');
+      const isOpen = !dropdown!.classList.contains('hidden');
       if (isOpen) {
-        dropdown.classList.add('hidden');
-        btn.setAttribute('aria-expanded', 'false');
+        dropdown!.classList.add('hidden');
+        btn!.setAttribute('aria-expanded', 'false');
       } else {
-        dropdown.classList.remove('hidden');
-        btn.setAttribute('aria-expanded', 'true');
+        dropdown!.classList.remove('hidden');
+        btn!.setAttribute('aria-expanded', 'true');
       }
     };
     btn.addEventListener('click', (e) => { e.stopPropagation(); toggle(); });
@@ -230,14 +241,14 @@ function setupNavbar(): void {
       if (!dropdown || dropdown.classList.contains('hidden')) return;
       const target = e.target as HTMLElement;
       if (!target.closest('.user-menu')) {
-        dropdown.classList.add('hidden');
-        btn.setAttribute('aria-expanded', 'false');
+        dropdown!.classList.add('hidden');
+        btn!.setAttribute('aria-expanded', 'false');
       }
     });
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && !dropdown.classList.contains('hidden')) {
-        dropdown.classList.add('hidden');
-        btn.setAttribute('aria-expanded', 'false');
+      if (e.key === 'Escape' && !dropdown!.classList.contains('hidden')) {
+        dropdown!.classList.add('hidden');
+        btn!.setAttribute('aria-expanded', 'false');
       }
     });
   }

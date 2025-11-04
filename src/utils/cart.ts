@@ -4,11 +4,11 @@ import { FS_CART } from './auth';
 
 const SHIPPING_COST = 500;
 
-function persist(cart: ICart): void {
+function save(cart: ICart): void {
   localStorage.setItem(FS_CART, JSON.stringify(cart));
 }
 
-function nowIso(): string {
+function getTimestamp(): string {
   return new Date().toISOString();
 }
 
@@ -26,9 +26,9 @@ export function getCart(): ICart {
     subtotal: 0,
     shipping: 0,
     total: 0,
-    updatedAt: nowIso(),
+    updatedAt: getTimestamp(),
   };
-  persist(empty);
+  save(empty);
   return empty;
 }
 
@@ -37,8 +37,8 @@ export function recalcTotals(): ICart {
   cart.subtotal = cart.items.reduce((acc, it) => acc + it.price * it.qty, 0);
   cart.shipping = cart.items.length > 0 ? SHIPPING_COST : 0;
   cart.total = cart.subtotal + cart.shipping;
-  cart.updatedAt = nowIso();
-  persist(cart);
+  cart.updatedAt = getTimestamp();
+  save(cart);
   return cart;
 }
 
@@ -66,7 +66,7 @@ export function addItem(product: IProduct, qty: number): ICart {
     };
     cart.items.push(item);
   }
-  persist(cart);
+  save(cart);
   return recalcTotals();
 }
 
@@ -79,14 +79,14 @@ export function updateQty(productId: number, newQty: number): ICart {
   } else {
     item.qty = Math.min(newQty, item.max);
   }
-  persist(cart);
+  save(cart);
   return recalcTotals();
 }
 
 export function removeItem(productId: number): ICart {
   const cart = getCart();
   cart.items = cart.items.filter((it) => it.productId !== productId);
-  persist(cart);
+  save(cart);
   return recalcTotals();
 }
 
@@ -96,9 +96,9 @@ export function clearCart(): ICart {
     subtotal: 0,
     shipping: 0,
     total: 0,
-    updatedAt: nowIso(),
+    updatedAt: getTimestamp(),
   } satisfies ICart;
-  persist(empty);
+  save(empty);
   return empty;
 }
 

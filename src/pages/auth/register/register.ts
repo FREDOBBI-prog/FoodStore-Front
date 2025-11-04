@@ -8,13 +8,25 @@ const FS_USERS = 'FS_USERS';
 // GOOGLE OAUTH INTEGRATION
 // ============================================
 
-// IMPORTANTE: Reemplazá este Client ID con el tuyo de Google Cloud Console
+// importante: reemplaza este client id con el tuyo de google cloud console
 const GOOGLE_CLIENT_ID = '409968892025-7m4qjqgn3pq0hmsgb6dfj2md8ck12p9q.apps.googleusercontent.com';
 
-// Inicializar Google Sign-In cuando la librería esté lista
+// inicializo google sign-in cuando la libreria este lista
 declare global {
   interface Window {
-    google: any;
+    google?: {
+      accounts: {
+        id: {
+          initialize: (config: unknown) => void;
+          prompt: () => void;
+        };
+        oauth2: {
+          initTokenClient: (config: unknown) => {
+            requestAccessToken: () => void;
+          };
+        };
+      };
+    };
   }
 }
 
@@ -35,19 +47,19 @@ function initializeGoogleSignIn() {
   });
 }
 
-// Callback que recibe la respuesta de Google
-function handleGoogleCredentialResponse(response: any) {
+// callback cuando google devuelve la respuesta
+function handleGoogleCredentialResponse(response: { credential: string }) {
   try {
-    // Decodificar el JWT token que Google envía
+    // decodifico el jwt que manda google
     const credential = response.credential;
     const payload = parseJwt(credential);
     
     console.log('Google user data:', payload);
 
-    // Verificar si es el email de admin
+    // veo si es el admin por email
     const isAdmin = payload.email?.toLowerCase() === 'adrianfredes12@gmail.com';
     
-    // Crear usuario con los datos de Google
+    // creo el usuario con los datos de google
     const googleUser: IUser = {
       id: Date.now(),
       name: payload.name || payload.email,
@@ -55,7 +67,7 @@ function handleGoogleCredentialResponse(response: any) {
       role: isAdmin ? 'admin' : 'cliente',
     };
 
-    // Guardar nuevo usuario de Google en localStorage
+    // guardo el nuevo usuario de google en localStorage
     const users = getUsersList();
     const existingUser = users.find(u => u.email.toLowerCase() === googleUser.email.toLowerCase());
     
@@ -64,10 +76,10 @@ function handleGoogleCredentialResponse(response: any) {
       localStorage.setItem(FS_USERS, JSON.stringify(users));
     }
 
-    // Guardar sesión
+    // guardo la sesion
     saveSession(googleUser);
 
-    // Redirigir a la tienda (los registros siempre son clientes)
+    // redirijo a la tienda, los registros siempre son clientes
     go('../../store/home/home.html');
   } catch (error) {
     console.error('Error processing Google registration:', error);
@@ -75,8 +87,8 @@ function handleGoogleCredentialResponse(response: any) {
   }
 }
 
-// Función para decodificar el JWT de Google
-function parseJwt(token: string) {
+// funcion para decodificar el jwt de google
+function parseJwt(token: string): { name?: string; email?: string } {
   try {
     const base64Url = token.split('.')[1];
     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
@@ -86,14 +98,14 @@ function parseJwt(token: string) {
         .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
         .join('')
     );
-    return JSON.parse(jsonPayload);
+    return JSON.parse(jsonPayload) as { name?: string; email?: string };
   } catch (e) {
     console.error('Error parsing JWT:', e);
     return {};
   }
 }
 
-// Manejar callback cuando Google redirige de vuelta
+// manejo el callback cuando google redirige de vuelta
 function handleGoogleRedirect() {
   const hash = window.location.hash;
   if (hash && hash.includes('access_token')) {
@@ -101,13 +113,13 @@ function handleGoogleRedirect() {
     const accessToken = params.get('access_token');
     
     if (accessToken) {
-      // Obtener info del usuario de Google
+      // traigo la info del usuario de google
       fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
         headers: { Authorization: `Bearer ${accessToken}` }
       })
       .then(res => res.json())
-      .then(userData => {
-        // Verificar si es el email de admin
+      .then((userData: { name?: string; email: string }) => {
+        // veo si es admin por email
         const isAdmin = userData.email.toLowerCase() === 'adrianfredes12@gmail.com';
         
         const googleUser: IUser = {
@@ -125,9 +137,9 @@ function handleGoogleRedirect() {
         }
         
         saveSession(googleUser);
-        window.location.hash = ''; // Limpiar hash
+        window.location.hash = ''; // limpio el hash
         
-        // Redirigir según el rol
+        // redirijo segun el rol
         if (googleUser.role === 'admin') {
           go('../../admin/adminHome/adminHome.html');
         } else {
@@ -142,9 +154,9 @@ function handleGoogleRedirect() {
   }
 }
 
-// Cargar Google Sign-In cuando el script esté listo
+// cargo google sign-in cuando el script este listo
 window.addEventListener('load', () => {
-  // Primero verificar si hay callback de Google
+  // primero verifico si hay callback de google
   handleGoogleRedirect();
   
   const checkGoogleLoaded = setInterval(() => {
@@ -157,7 +169,7 @@ window.addEventListener('load', () => {
   setTimeout(() => clearInterval(checkGoogleLoaded), 5000);
 });
 
-// Manejar click en el botón personalizado de Google
+// manejo el click en el boton de google
 const googleBtn = document.getElementById('googleRegisterBtn');
 googleBtn?.addEventListener('click', () => {
   if (!window.google) {
@@ -166,7 +178,7 @@ googleBtn?.addEventListener('click', () => {
   }
   
   try {
-    // Crear URL de autenticación de Google manualmente
+    // creo la url de autenticacion de google manualmente
     const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
       `client_id=${GOOGLE_CLIENT_ID}&` +
       `redirect_uri=${encodeURIComponent(window.location.origin + '/src/pages/auth/register/register.html')}&` +
@@ -174,7 +186,7 @@ googleBtn?.addEventListener('click', () => {
       `scope=openid%20email%20profile&` +
       `state=register`;
     
-    // Redirigir a Google (sin popup, más confiable)
+    // redirijo a google sin popup porque es mas confiable
     window.location.href = authUrl;
   } catch (e) {
     console.error('Error al iniciar Google Sign-In:', e);
@@ -196,9 +208,13 @@ function saveUserToList(email: string, password: string): void {
 const form = document.getElementById('registerForm') as HTMLFormElement | null;
 form?.addEventListener('submit', (e) => {
   e.preventDefault();
-  const name = (document.getElementById('name') as HTMLInputElement).value.trim();
-  const email = (document.getElementById('email') as HTMLInputElement).value.trim();
-  const password = (document.getElementById('password') as HTMLInputElement).value;
+  const nameEl = document.getElementById('name') as HTMLInputElement | null;
+  const emailEl = document.getElementById('email') as HTMLInputElement | null;
+  const passwordEl = document.getElementById('password') as HTMLInputElement | null;
+  if (!nameEl || !emailEl || !passwordEl) return;
+  const name = nameEl.value.trim();
+  const email = emailEl.value.trim();
+  const password = passwordEl.value;
   const roleEl = document.getElementById('role') as HTMLSelectElement | null;
   const role = roleEl?.value || 'cliente';
   if (!name || !email || !password) {
@@ -214,9 +230,9 @@ form?.addEventListener('submit', (e) => {
     alert('Ese email ya está registrado en este sistema. Usá otro o iniciá sesión.');
     return;
   }
-  // Agrego usuario a la lista local
+  // agrego usuario a la lista local
   saveUserToList(email, password);
-  // Guardo la sesión y redirijo
+  // guardo la sesion y redirijo
   const isAdminCreds = email.toLowerCase() === 'adrianfredes12@gmail.com' && password === 'adrian123';
   const user = {
     id: 0,

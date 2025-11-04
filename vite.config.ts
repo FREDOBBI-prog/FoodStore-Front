@@ -2,7 +2,7 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'node:path';
 
-// Entradas HTML para multipágina. Mantener rutas relativas en build.
+// entradas html para multipagina, mantener rutas relativas en build
 const pages = {
   index: resolve(__dirname, 'index.html'),
   login: resolve(__dirname, 'src/pages/auth/login/login.html'),

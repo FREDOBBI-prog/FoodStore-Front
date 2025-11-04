@@ -14,7 +14,7 @@ $("#refreshBtn")?.addEventListener("click", loadSummary);
 type DonutSlice = { value: number; color: string; label: string };
 
 function renderDonut(el: SVGElement, slices: DonutSlice[]) {
-  // limpia slices previos
+  // limpio los slices anteriores
   [...el.querySelectorAll("path[data-slice]")].forEach(n => n.remove());
   const total = slices.reduce((a, s) => a + s.value, 0) || 1;
   let acc = 0;
@@ -29,12 +29,14 @@ function renderDonut(el: SVGElement, slices: DonutSlice[]) {
     path.setAttribute("d","M21 21 m 0 -15.915 a 15.915 15.915 0 1 1 0 31.83 a 15.915 15.915 0 1 1 0 -31.83");
     path.setAttribute("stroke-dasharray", dash);
     path.setAttribute("stroke-dashoffset", String(100 - acc));
-    (el as any).appendChild(path);
+    el.appendChild(path);
     acc += val;
   });
 }
 
-function fmt(n: number){ return new Intl.NumberFormat('es-AR').format(n); }
+function fmt(n: number) {
+  return new Intl.NumberFormat('es-AR').format(n);
+}
 
 async function loadSummary() {
   hide("#adminError"); hide("#adminEmpty"); show("#adminLoading");
@@ -46,21 +48,21 @@ async function loadSummary() {
       get<IOrder[]>("/orders"),
     ]);
 
-    // KPIs categorías
+    // contadores de categorias
     const catAct = cats.filter(c => c.active).length;
     const catInact = cats.length - catAct;
     $("#catTotal")!.textContent = fmt(cats.length);
     $("#catActivas")!.textContent = fmt(catAct);
     $("#catInactivas")!.textContent = fmt(catInact);
 
-    // KPIs productos
+    // contadores de productos
     const pDisp = prods.filter(p => p.available).length;
     const pNo = prods.length - pDisp;
     $("#prodTotal")!.textContent = fmt(prods.length);
     $("#prodDisponibles")!.textContent = fmt(pDisp);
     $("#prodNoDisponibles")!.textContent = fmt(pNo);
 
-    // Pedidos por estado + donut
+    // cuento pedidos por estado y armo el donut
     const estados: Record<OrderStatus, number> = { pending:0, processing:0, completed:0, cancelled:0 };
     orders.forEach(o => estados[o.status]++);
     $("#pendingCount")!.textContent = fmt(estados.pending);
@@ -68,15 +70,17 @@ async function loadSummary() {
     $("#completedCount")!.textContent = fmt(estados.completed);
     $("#cancelledCount")!.textContent = fmt(estados.cancelled);
 
-    const donut = document.getElementById("ordersDonut") as SVGElement;
-    renderDonut(donut, [
-      { value: estados.pending,   color: "#f59e0b", label: "Pendientes" },
-      { value: estados.processing,color: "#3b82f6", label: "Procesando" },
-      { value: estados.completed, color: "#10b981", label: "Completados" },
-      { value: estados.cancelled, color: "#ef4444", label: "Cancelados" },
-    ]);
+    const donut = document.getElementById("ordersDonut") as SVGElement | null;
+    if (donut) {
+      renderDonut(donut, [
+        { value: estados.pending,   color: "#f59e0b", label: "Pendientes" },
+        { value: estados.processing,color: "#3b82f6", label: "Procesando" },
+        { value: estados.completed, color: "#10b981", label: "Completados" },
+        { value: estados.cancelled, color: "#ef4444", label: "Cancelados" },
+      ]);
+    }
 
-    // Top productos (por stock disponible desc)
+    // top 5 productos con mas stock
     const top = [...prods].sort((a,b) => (b.stock ?? 0) - (a.stock ?? 0)).slice(0,5);
     const topEl = $("#topProducts")!;
     topEl.innerHTML = top.length ? top.map(p => `
@@ -92,7 +96,7 @@ async function loadSummary() {
       </div>
     `).join("") : '<div style="color:#9ca3af; text-align:center; padding:20px">No hay productos</div>';
 
-    // Últimas acciones (pedidos más recientes)
+    // ultimos 5 pedidos ordenados por fecha
     const recent = [...orders].sort((a,b) => (b.createdAt.localeCompare(a.createdAt))).slice(0,5);
     const recentEl = $("#recentActions")!;
     const statusMap = {
@@ -119,10 +123,10 @@ async function loadSummary() {
       </div>
     `}).join("") : '<div style="color:#9ca3af; text-align:center; padding:20px">No hay actividad reciente</div>';
 
-    // actualizado
+    // muestro la hora de actualizacion
     $("#updatedAt")!.textContent = "Actualizado: " + new Date().toLocaleTimeString('es-AR');
 
-    // estados globales
+    // oculto el loading
     hide("#adminLoading");
     if (!cats.length && !prods.length && !orders.length) show("#adminEmpty");
 

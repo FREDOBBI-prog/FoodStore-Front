@@ -314,20 +314,20 @@ onReady(async () => {
   if (!container || !resultCount || !errorBox || !loading) return;
 
   setupNavbar();
-  errorBox.style.display = 'none';
-  loading.style.display = 'block';
+  errorBox!.style.display = 'none';
+  loading!.style.display = 'block';
 
   try {
-    // Cargar categorías y productos desde la API
+    // traigo categorias y productos de la api
     const [categories, products] = await Promise.all([
       get<ICategoria[]>('/categories'),
       get<IProduct[]>('/products')
     ]);
 
-    // Filtrar solo productos disponibles
+    // solo los que estan disponibles
     availableProducts = products.filter(p => p.available);
 
-    // Agrupar por categoría
+    // los agrupo por categoria
     const productsByCategory = categories
       .filter(cat => cat.active)
       .map(cat => ({
@@ -337,23 +337,23 @@ onReady(async () => {
       }))
       .filter(section => section.products.length > 0);
 
-    loading.style.display = 'none';
-    renderSectionsFromAPI(container, resultCount, productsByCategory, availableProducts);
+    loading!.style.display = 'none';
+    renderSectionsFromAPI(container!, resultCount!, productsByCategory, availableProducts);
   } catch (error) {
-    loading.style.display = 'none';
-    errorBox.style.display = 'block';
-    errorBox.textContent = (error as Error).message || 'Error al cargar productos';
-    // Fallback a datos offline si falla la API
-    renderSections(container, resultCount, menuSections, offlineProducts);
+    loading!.style.display = 'none';
+    errorBox!.style.display = 'block';
+    errorBox!.textContent = (error as Error).message || 'Error al cargar productos';
+    // si falla la api uso datos offline
+    renderSections(container!, resultCount!, menuSections, offlineProducts);
   }
 
-  container.addEventListener('click', async (ev) => {
+  container!.addEventListener('click', async (ev) => {
     const btn = (ev.target as HTMLElement).closest('button[data-action="add"]') as HTMLButtonElement | null;
     if (!btn) return;
     const id = Number(btn.dataset.id || '0');
     
     try {
-      // Cargar producto desde API si no está en memoria
+      // busco el producto en memoria, sino lo pido a la api
       let product = availableProducts?.find((p) => p.id === id);
       if (!product) {
         product = await get<IProduct>(`/products/${id}`);
@@ -365,8 +365,10 @@ onReady(async () => {
       addItem(product, 1);
       const cartCount = document.querySelector<HTMLSpanElement>('#cartCount');
       if (cartCount) cartCount.textContent = String(getCart().items.reduce((a, b) => a + b.qty, 0));
-      btn.textContent = 'Agregado!';
-      setTimeout(() => { btn.textContent = 'Agregar'; }, 1200);
+      if (btn) {
+        btn.textContent = 'Agregado!';
+        setTimeout(() => { if (btn) btn.textContent = 'Agregar'; }, 1200);
+      }
     } catch (error) {
       alert((error as Error).message);
     }
@@ -445,7 +447,7 @@ function setupNavbar(): void {
   const cartCount = document.querySelector<HTMLSpanElement>('#cartCount');
   if (cartCount) cartCount.textContent = String(getCart().items.reduce((a, b) => a + b.qty, 0));
 
-  // Menú de usuario
+  // menu del usuario
   const dropdown = document.getElementById('userDropdown');
   const btn = document.getElementById('userMenuBtn');
   const nameEl = document.getElementById('menuUserName');
@@ -458,21 +460,21 @@ function setupNavbar(): void {
   if (nameEl && session) nameEl.textContent = session.name || session.email || 'Usuario';
   if (emailEl && session) emailEl.textContent = session.email || '';
 
-  // Visibilidad condicional
+  // muestro u oculto segun el rol
   if (ordersLink) ordersLink.style.display = session && session.role === 'cliente' ? 'block' : 'none';
   if (adminLink) adminLink.style.display = isAdmin() ? 'block' : 'none';
   if (accountLink) accountLink.addEventListener('click', (e) => { e.preventDefault(); });
 
-  // Toggle dropdown
+  // abro y cierro el dropdown
   if (btn && dropdown) {
     const toggle = (): void => {
-      const isOpen = !dropdown.classList.contains('hidden');
+      const isOpen = !dropdown!.classList.contains('hidden');
       if (isOpen) {
-        dropdown.classList.add('hidden');
-        btn.setAttribute('aria-expanded', 'false');
+        dropdown!.classList.add('hidden');
+        btn!.setAttribute('aria-expanded', 'false');
       } else {
-        dropdown.classList.remove('hidden');
-        btn.setAttribute('aria-expanded', 'true');
+        dropdown!.classList.remove('hidden');
+        btn!.setAttribute('aria-expanded', 'true');
       }
     };
     btn.addEventListener('click', (e) => { e.stopPropagation(); toggle(); });
@@ -480,14 +482,14 @@ function setupNavbar(): void {
       if (!dropdown || dropdown.classList.contains('hidden')) return;
       const target = e.target as HTMLElement;
       if (!target.closest('.user-menu')) {
-        dropdown.classList.add('hidden');
-        btn.setAttribute('aria-expanded', 'false');
+        dropdown!.classList.add('hidden');
+        btn!.setAttribute('aria-expanded', 'false');
       }
     });
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && !dropdown.classList.contains('hidden')) {
-        dropdown.classList.add('hidden');
-        btn.setAttribute('aria-expanded', 'false');
+      if (e.key === 'Escape' && !dropdown!.classList.contains('hidden')) {
+        dropdown!.classList.add('hidden');
+        btn!.setAttribute('aria-expanded', 'false');
       }
     });
   }
@@ -496,22 +498,6 @@ function setupNavbar(): void {
 }
 
 
-// Carga remota (API): categorías y productos
-async function loadCategories(): Promise<void> {
-  const cats = await get<ICategoria[]>('/categories');
-  void cats; // Integrar con UI si hay sidebar/select
-}
 
-async function loadProducts(params: { categoryId?: number; q?: string; sort?: string } = {}): Promise<void> {
-  const query = new URLSearchParams();
-  if (params.categoryId != null) query.set('categoryId', String(params.categoryId));
-  if (params.q) query.set('q', params.q);
-  if (params.sort) query.set('sort', params.sort);
-  const products = await get<IProduct[]>(`/products${query.toString() ? `?${query}` : ''}`);
-  void products; // Integrar con grid de productos si corresponde
-}
-
-void loadCategories();
-void loadProducts();
 
 
