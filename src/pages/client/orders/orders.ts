@@ -23,6 +23,12 @@ onReady(async () => {
       empty!.style.display = 'block';
       return;
     }
+    // normalizo los items para asegurar que sean arrays
+    orders.forEach(order => {
+      if (!Array.isArray(order.items)) {
+        order.items = [];
+      }
+    });
     orders.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
     grid!.innerHTML = orders.map(renderCard).join('');
     grid!.addEventListener('click', (ev) => {
@@ -46,7 +52,9 @@ onReady(async () => {
 });
 
 function renderCard(o: IOrder): string {
-  const itemsSummary = summarizeItems(o);
+  // aseguro que items sea un array
+  const items = Array.isArray(o.items) ? o.items : [];
+  const itemsSummary = summarizeItems({ ...o, items });
   return `
     <article class="card" data-order-id="${o.id}" style="cursor:pointer;">
       <div class="card-body">
@@ -57,7 +65,7 @@ function renderCard(o: IOrder): string {
         <div class="muted">${new Date(o.createdAt).toLocaleString('es-AR')}</div>
         <div>${itemsSummary}</div>
         <div class="row" style="justify-content:space-between; align-items:center;">
-          <span class="muted">${o.items.length} ítems</span>
+          <span class="muted">${items.length} ítems</span>
           <strong>${formatCurrency(o.total)}</strong>
         </div>
       </div>
@@ -65,8 +73,10 @@ function renderCard(o: IOrder): string {
 }
 
 function summarizeItems(o: IOrder): string {
-  const names = o.items.slice(0, 3).map((i) => `${i.name} x${i.qty}`);
-  const extra = o.items.length > 3 ? ` +${o.items.length - 3} más` : '';
+  const items = Array.isArray(o.items) ? o.items : [];
+  if (items.length === 0) return 'Sin items';
+  const names = items.slice(0, 3).map((i) => `${i.name} x${i.qty}`);
+  const extra = items.length > 3 ? ` +${items.length - 3} más` : '';
   return names.join(', ') + extra;
 }
 
@@ -85,24 +95,26 @@ function openModal(o: IOrder): void {
   const modal = document.querySelector<HTMLDivElement>('#orderModal');
   const backdrop = document.querySelector<HTMLDivElement>('#modalBackdrop');
   if (!modal || !backdrop) return;
+  // aseguro que items sea un array
+  const items = Array.isArray(o.items) ? o.items : [];
   modal.innerHTML = `
     <h3 id="orderTitle">Pedido #${o.id}</h3>
     <p class="muted">${new Date(o.createdAt).toLocaleString('es-AR')} — ${renderStatusBadge(o.status)}</p>
     <div class="space"></div>
     <div class="row"><span>Cliente</span><strong class="right">${o.userName}</strong></div>
-    <div class="row"><span>Teléfono</span><strong class="right">${o.phone}</strong></div>
-    <div class="row"><span>Entrega</span><strong class="right">${o.deliveryAddress}</strong></div>
+    <div class="row"><span>Mesa/Mostrador</span><strong class="right">${o.deliveryAddress}</strong></div>
+    <div class="row"><span>Método de pago</span><strong class="right">${o.paymentMethod === 'efectivo' ? 'Efectivo' : o.paymentMethod === 'tarjeta' ? 'Tarjeta' : 'Transferencia'}</strong></div>
     <div class="space"></div>
-    <div>${o.items.map((i) => `
+    <div>${items.length > 0 ? items.map((i) => `
       <div class="row" style="justify-content:space-between;">
         <span>${i.name} x${i.qty}</span>
         <span>${formatCurrency(i.price * i.qty)}</span>
-      </div>`).join('')}</div>
+      </div>`).join('') : '<p class="muted">Sin items</p>'}</div>
     <div class="space"></div>
     <div class="row"><span>Subtotal</span><strong class="right">${formatCurrency(o.subtotal)}</strong></div>
     <div class="row"><span>Envío</span><strong class="right">${formatCurrency(o.shipping)}</strong></div>
     <div class="row"><span>Total</span><strong class="right">${formatCurrency(o.total)}</strong></div>
-    ${o.notes ? `<div class="banner">Notas: ${o.notes}</div>` : ''}
+    ${o.notes ? `<div class="space"></div><div class="banner"><strong>Detalles:</strong><br>${o.notes.split(' | ').map(n => `• ${n}`).join('<br>')}</div>` : ''}
     <div class="space"></div>
     <div class="row">
       <button class="btn outline right" id="closeModal">Cerrar</button>

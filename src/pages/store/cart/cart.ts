@@ -113,12 +113,20 @@ function openCheckout(modal: HTMLDivElement, backdrop: HTMLDivElement): void {
     <p class="muted" style="margin-top:-4px;">Completá los datos para finalizar el pedido.</p>
     <form id="${id}" class="form" autocomplete="off">
       <div class="field">
-        <label for="phone">Teléfono</label>
-        <input id="phone" type="tel" required placeholder="Ej: 261-555-1234" />
+        <label for="customerName">Nombre</label>
+        <input id="customerName" type="text" required placeholder="Tu nombre" />
       </div>
       <div class="field">
-        <label for="address">Dirección</label>
-        <input id="address" type="text" required placeholder="Calle 123, Ciudad" />
+        <label for="tableOrCounter">Número de mesa o retirar en el mostrador</label>
+        <input id="tableOrCounter" type="text" required placeholder="Ej: Mesa 5 o Retirar en mostrador" />
+      </div>
+      <div class="field">
+        <label for="diningType">Tipo de servicio</label>
+        <select id="diningType" required>
+          <option value="">Seleccionar</option>
+          <option value="en_lugar">Comer en el lugar</option>
+          <option value="para_llevar">Para llevar</option>
+        </select>
       </div>
       <div class="field">
         <label for="payment">Método de pago</label>
@@ -129,12 +137,19 @@ function openCheckout(modal: HTMLDivElement, backdrop: HTMLDivElement): void {
         </select>
       </div>
       <div class="field">
-        <label for="notes">Notas (opcional)</label>
-        <textarea id="notes" rows="2" placeholder="Aclaraciones para la entrega"></textarea>
+        <label for="removeCondiments">¿Desea quitar algún condimento?</label>
+        <select id="removeCondiments" required>
+          <option value="no">No</option>
+          <option value="si">Sí</option>
+        </select>
+      </div>
+      <div class="field" id="condimentsDetailsField" style="display:none;">
+        <label for="condimentsDetails">¿Cuál condimento?</label>
+        <textarea id="condimentsDetails" rows="2" placeholder="Especifica qué condimentos quitar"></textarea>
       </div>
       <div class="row" style="justify-content:flex-end; gap:12px;">
         <button class="btn outline" type="button" id="closeModal">Cancelar</button>
-        <button class="btn primary" type="submit">Siguiente</button>
+        <button class="btn primary" type="submit">Confirmar</button>
       </div>
     </form>`;
   modal.style.display = 'block';
@@ -143,8 +158,18 @@ function openCheckout(modal: HTMLDivElement, backdrop: HTMLDivElement): void {
   backdrop.addEventListener('click', close, { once: true });
   const closeBtn = modal.querySelector<HTMLButtonElement>('#closeModal');
   const form = modal.querySelector<HTMLFormElement>(`#${id}`);
+  const removeCondimentsSelect = modal.querySelector<HTMLSelectElement>('#removeCondiments');
+  const condimentsDetailsField = modal.querySelector<HTMLDivElement>('#condimentsDetailsField');
+  
   if (closeBtn) closeBtn.addEventListener('click', close, { once: true });
   if (form) form.addEventListener('submit', submitOrder);
+  
+  // mostrar/ocultar campo de condimentos
+  if (removeCondimentsSelect && condimentsDetailsField) {
+    removeCondimentsSelect.addEventListener('change', () => {
+      condimentsDetailsField.style.display = removeCondimentsSelect.value === 'si' ? 'block' : 'none';
+    });
+  }
 
   function close(): void {
     modal!.style.display = 'none';
@@ -155,27 +180,46 @@ function openCheckout(modal: HTMLDivElement, backdrop: HTMLDivElement): void {
 
 async function submitOrder(ev: SubmitEvent): Promise<void> {
   ev.preventDefault();
-  const phoneEl = document.querySelector<HTMLInputElement>('#phone');
-  const addressEl = document.querySelector<HTMLInputElement>('#address');
+  const customerNameEl = document.querySelector<HTMLInputElement>('#customerName');
+  const tableOrCounterEl = document.querySelector<HTMLInputElement>('#tableOrCounter');
+  const diningTypeEl = document.querySelector<HTMLSelectElement>('#diningType');
   const paymentEl = document.querySelector<HTMLSelectElement>('#payment');
-  const notesEl = document.querySelector<HTMLTextAreaElement>('#notes');
+  const removeCondimentsEl = document.querySelector<HTMLSelectElement>('#removeCondiments');
+  const condimentsDetailsEl = document.querySelector<HTMLTextAreaElement>('#condimentsDetails');
   
-  const phone = (phoneEl?.value || '').trim();
-  const address = (addressEl?.value || '').trim();
+  const customerName = (customerNameEl?.value || '').trim();
+  const tableOrCounter = (tableOrCounterEl?.value || '').trim();
+  const diningType = (diningTypeEl?.value || '').trim();
   const payment = (paymentEl?.value || 'efectivo') as 'efectivo' | 'tarjeta' | 'transferencia';
-  const notes = (notesEl?.value || '').trim();
+  const removeCondiments = (removeCondimentsEl?.value || 'no').trim();
+  const condimentsDetails = (condimentsDetailsEl?.value || '').trim();
   
-  if (!phone || !address) {
-    alert('Completá teléfono y dirección');
+  if (!customerName || !tableOrCounter || !diningType) {
+    alert('Completá todos los campos obligatorios');
+    return;
+  }
+  
+  if (removeCondiments === 'si' && !condimentsDetails) {
+    alert('Especificá qué condimentos deseas quitar');
     return;
   }
   
   const cart = getCart();
   try {
     const session = getSession();
+    
+    // armo las notas con toda la informacion adicional
+    const notesParts: string[] = [];
+    notesParts.push(`Tipo: ${diningType === 'en_lugar' ? 'Comer en el lugar' : 'Para llevar'}`);
+    notesParts.push(`Mesa/Mostrador: ${tableOrCounter}`);
+    if (removeCondiments === 'si') {
+      notesParts.push(`Condimentos a quitar: ${condimentsDetails}`);
+    }
+    const notes = notesParts.join(' | ');
+    
     const orderData = {
       userId: session?.id ?? 0,
-      userName: session?.name || session?.email || 'Cliente',
+      userName: customerName,
       status: 'pending' as const,
       items: cart.items.map((i) => ({
         productId: i.productId,
@@ -186,8 +230,8 @@ async function submitOrder(ev: SubmitEvent): Promise<void> {
       subtotal: cart.subtotal,
       shipping: cart.shipping,
       total: cart.total,
-      deliveryAddress: address,
-      phone,
+      deliveryAddress: diningType === 'en_lugar' ? `Mesa/Mostrador: ${tableOrCounter}` : `Para llevar: ${tableOrCounter}`,
+      phone: session?.email || 'No especificado',
       paymentMethod: payment,
       notes,
     };
