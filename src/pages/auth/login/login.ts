@@ -3,6 +3,14 @@ import { go } from '../../../utils/navigate';
 import type { IUser } from '../../../types/IUser';
 
 const FS_USERS = 'FS_USERS';
+const DEFAULT_USERS = [
+  { email: 'admin@food.com', password: 'food123' },
+  { email: 'cliente@food.com', password: 'cliente123' },
+  { email: 'adrianfredes12@gmail.com', password: 'adrian123' },
+];
+const ADMIN_COMBOS = DEFAULT_USERS.filter((u) =>
+  ['admin@food.com', 'adrianfredes12@gmail.com'].includes(u.email.toLowerCase())
+);
 
 // ============================================
 // GOOGLE OAUTH INTEGRATION
@@ -203,8 +211,18 @@ googleBtn?.addEventListener('click', () => {
 function getUsersList(): Array<{ email: string, password: string }> {
   try {
     const data = localStorage.getItem(FS_USERS);
-    return data ? JSON.parse(data) : [];
-  } catch { return []; }
+    const list: Array<{ email: string, password: string }> = data ? JSON.parse(data) : [];
+    DEFAULT_USERS.forEach((user) => {
+      if (!list.some((u) => u.email.toLowerCase() === user.email.toLowerCase())) {
+        list.push(user);
+      }
+    });
+    localStorage.setItem(FS_USERS, JSON.stringify(list));
+    return list;
+  } catch {
+    localStorage.setItem(FS_USERS, JSON.stringify(DEFAULT_USERS));
+    return [...DEFAULT_USERS];
+  }
 }
 
 const form = document.getElementById('loginForm') as HTMLFormElement | null;
@@ -222,8 +240,10 @@ form?.addEventListener('submit', (e) => {
   const users = getUsersList();
   const found = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
   if (found) {
-    // si el mail es el del admin especial
-    const isAdminCreds = email.toLowerCase() === 'adrianfredes12@gmail.com' && password === 'adrian123';
+    // si las credenciales corresponden a un admin predefinido
+    const isAdminCreds = ADMIN_COMBOS.some((combo) =>
+      combo.email.toLowerCase() === email.toLowerCase() && combo.password === password
+    );
     const normalized = {
       id: 0,
       name: email,
