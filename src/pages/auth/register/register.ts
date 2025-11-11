@@ -1,5 +1,6 @@
 import { saveSession } from '../../../utils/auth';
 import { go } from '../../../utils/navigate';
+import { post } from '../../../utils/api';
 import type { IUser } from '../../../types/IUser';
 
 const FS_USERS = 'FS_USERS';
@@ -56,7 +57,7 @@ function initializeGoogleSignIn() {
 }
 
 // callback cuando google devuelve la respuesta
-function handleGoogleCredentialResponse(response: { credential: string }) {
+async function handleGoogleCredentialResponse(response: { credential: string }) {
   try {
     // decodifico el jwt que manda google
     const credential = response.credential;
@@ -64,31 +65,57 @@ function handleGoogleCredentialResponse(response: { credential: string }) {
     
     console.log('Google user data:', payload);
 
-    // veo si es el admin por email
-    const isAdmin = payload.email?.toLowerCase() === 'adrianfredes12@gmail.com';
-    
-    // creo el usuario con los datos de google
-    const googleUser: IUser = {
-      id: Date.now(),
-      name: payload.name || payload.email,
-      email: payload.email,
-      role: isAdmin ? 'admin' : 'cliente',
-    };
-
-    // guardo el nuevo usuario de google en localStorage
-    const users = getUsersList();
-    const existingUser = users.find(u => u.email.toLowerCase() === googleUser.email.toLowerCase());
-    
-    if (!existingUser) {
-      users.push({ email: googleUser.email, password: `google_${Date.now()}` });
-      localStorage.setItem(FS_USERS, JSON.stringify(users));
+    if (!payload.email) {
+      alert('No se pudo obtener el email de Google');
+      return;
     }
 
-    // guardo la sesion
-    saveSession(googleUser);
-
-    // redirijo a la tienda, los registros siempre son clientes
-    go('../../store/home/home.html');
+    // veo si es el admin por email
+    const isAdmin = payload.email.toLowerCase() === 'adrianfredes12@gmail.com';
+    
+    try {
+      // Intento registrar el usuario en el backend
+      const newUser = await post<IUser, { name: string; email: string; password: string; role: string }>(
+        '/api/auth/register',
+        {
+          name: payload.name || payload.email,
+          email: payload.email,
+          password: `google_${payload.email}`, // Contraseña temporal para usuarios de Google
+          role: isAdmin ? 'admin' : 'cliente'
+        }
+      );
+      
+      saveSession(newUser);
+      if (newUser.role === 'admin') {
+        go('../../admin/adminHome/adminHome.html');
+      } else {
+        go('../../store/home/home.html');
+      }
+    } catch (registerError: unknown) {
+      // Si ya existe, intento hacer login
+      const errorMessage = registerError instanceof Error ? registerError.message : '';
+      if (errorMessage.includes('ya está registrado')) {
+        try {
+          const user = await post<IUser, { email: string; password: string }>(
+            '/api/auth/login',
+            { email: payload.email, password: `google_${payload.email}` }
+          );
+          
+          saveSession(user);
+          if (user.role === 'admin') {
+            go('../../admin/adminHome/adminHome.html');
+          } else {
+            go('../../store/home/home.html');
+          }
+        } catch (loginError) {
+          console.error('Error al iniciar sesión con Google:', loginError);
+          alert('Error al registrarse con Google. Intentá de nuevo.');
+        }
+      } else {
+        console.error('Error al registrar usuario de Google:', registerError);
+        alert('Error al registrarse con Google. Intentá de nuevo.');
+      }
+    }
   } catch (error) {
     console.error('Error processing Google registration:', error);
     alert('Error al registrarse con Google. Intentá de nuevo.');
@@ -114,50 +141,77 @@ function parseJwt(token: string): { name?: string; email?: string } {
 }
 
 // manejo el callback cuando google redirige de vuelta
-function handleGoogleRedirect() {
+async function handleGoogleRedirect() {
   const hash = window.location.hash;
   if (hash && hash.includes('access_token')) {
     const params = new URLSearchParams(hash.substring(1));
     const accessToken = params.get('access_token');
     
     if (accessToken) {
-      // traigo la info del usuario de google
-      fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      })
-      .then(res => res.json())
-      .then((userData: { name?: string; email: string }) => {
+      try {
+        // traigo la info del usuario de google
+        const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: `Bearer ${accessToken}` }
+        });
+        const userData: { name?: string; email: string } = await res.json();
+        
+        if (!userData.email) {
+          alert('No se pudo obtener el email de Google');
+          return;
+        }
+
         // veo si es admin por email
         const isAdmin = userData.email.toLowerCase() === 'adrianfredes12@gmail.com';
         
-        const googleUser: IUser = {
-          id: Date.now(),
-          name: userData.name || userData.email,
-          email: userData.email,
-          role: isAdmin ? 'admin' : 'cliente',
-        };
-        
-        const users = getUsersList();
-        const existing = users.find(u => u.email.toLowerCase() === googleUser.email.toLowerCase());
-        if (!existing) {
-          users.push({ email: googleUser.email, password: `google_${Date.now()}` });
-          localStorage.setItem(FS_USERS, JSON.stringify(users));
+        try {
+          // Intento registrar el usuario en el backend
+          const newUser = await post<IUser, { name: string; email: string; password: string; role: string }>(
+            '/api/auth/register',
+            {
+              name: userData.name || userData.email,
+              email: userData.email,
+              password: `google_${userData.email}`,
+              role: isAdmin ? 'admin' : 'cliente'
+            }
+          );
+          
+          saveSession(newUser);
+          window.location.hash = '';
+          if (newUser.role === 'admin') {
+            go('../../admin/adminHome/adminHome.html');
+          } else {
+            go('../../store/home/home.html');
+          }
+        } catch (registerError: unknown) {
+          // Si ya existe, intento hacer login
+          const errorMessage = registerError instanceof Error ? registerError.message : '';
+          if (errorMessage.includes('ya está registrado')) {
+            try {
+              const user = await post<IUser, { email: string; password: string }>(
+                '/api/auth/login',
+                { email: userData.email, password: `google_${userData.email}` }
+              );
+              
+              saveSession(user);
+              window.location.hash = '';
+              if (user.role === 'admin') {
+                go('../../admin/adminHome/adminHome.html');
+              } else {
+                go('../../store/home/home.html');
+              }
+            } catch (loginError) {
+              console.error('Error al iniciar sesión con Google:', loginError);
+              alert('Error al registrarse con Google');
+            }
+          } else {
+            console.error('Error al registrar usuario de Google:', registerError);
+            alert('Error al registrarse con Google');
+          }
         }
-        
-        saveSession(googleUser);
-        window.location.hash = ''; // limpio el hash
-        
-        // redirijo segun el rol
-        if (googleUser.role === 'admin') {
-          go('../../admin/adminHome/adminHome.html');
-        } else {
-          go('../../store/home/home.html');
-        }
-      })
-      .catch(err => {
+      } catch (err) {
         console.error('Error obteniendo datos de Google:', err);
         alert('Error al registrarse con Google');
-      });
+      }
     }
   }
 }
@@ -227,7 +281,7 @@ function saveUserToList(email: string, password: string): void {
 }
 
 const form = document.getElementById('registerForm') as HTMLFormElement | null;
-form?.addEventListener('submit', (e) => {
+form?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const nameEl = document.getElementById('name') as HTMLInputElement | null;
   const emailEl = document.getElementById('email') as HTMLInputElement | null;
@@ -246,28 +300,29 @@ form?.addEventListener('submit', (e) => {
     alert('La contraseña debe tener al menos 6 caracteres');
     return;
   }
-  const users = getUsersList();
-  if (users.some(u => u.email.toLowerCase() === email.toLowerCase())) {
-    alert('Ese email ya está registrado en este sistema. Usá otro o iniciá sesión.');
-    return;
-  }
-  // agrego usuario a la lista local
-  saveUserToList(email, password);
-  // guardo la sesion y redirijo
-  const isAdminCreds = ADMIN_COMBOS.some((combo) =>
-    combo.email.toLowerCase() === email.toLowerCase() && combo.password === password
-  );
-  const user = {
-    id: 0,
-    name,
-    email,
-    role: isAdminCreds ? 'admin' : (role || 'cliente'),
-  } as IUser;
-  saveSession(user);
-  if (user.role === 'admin') {
-    go('../../admin/adminHome/adminHome.html');
-  } else {
-    go('../../store/home/home.html');
+
+  try {
+    // Llamo al backend para registrar
+    const user = await post<IUser, { name: string; email: string; password: string; role: string }>(
+      '/api/auth/register',
+      { name, email, password, role }
+    );
+    
+    // Guardo la sesión y redirijo
+    saveSession(user);
+    if (user.role === 'admin') {
+      go('../../admin/adminHome/adminHome.html');
+    } else {
+      go('../../store/home/home.html');
+    }
+  } catch (error: unknown) {
+    console.error('Error al registrarse:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Error al registrarse';
+    if (errorMessage.includes('ya está registrado') || errorMessage.includes('email')) {
+      alert('Ese email ya está registrado. Usá otro o iniciá sesión.');
+    } else {
+      alert(`Error: ${errorMessage}`);
+    }
   }
 });
 
